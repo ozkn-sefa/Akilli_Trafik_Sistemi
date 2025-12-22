@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions name="WeatherService" targetNamespace="http://example.com/weather" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://example.com/weather" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <wsdl:types>
+    <xsd:schema targetNamespace="http://example.com/weather">
+      <xsd:element name="getWeatherByCoords">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="lat" type="xsd:string"/>
+            <xsd:element name="lon" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="getWeatherByCoordsResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="weatherData" type="tns:WeatherData"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:complexType name="WeatherData">
+        <xsd:sequence>
+          <xsd:element name="temperature" type="xsd:float"/>
+          <xsd:element name="windspeed" type="xsd:float"/>
+          <xsd:element name="winddirection" type="xsd:float"/>
+          <xsd:element name="time" type="xsd:string"/>
+          <xsd:element name="city" type="xsd:string"/>
+          <xsd:element name="country" type="xsd:string"/>
+        </xsd:sequence>
+      </xsd:complexType>
+    </xsd:schema>
+  </wsdl:types>
+
+  <wsdl:message name="getWeatherRequest">
+    <wsdl:part name="parameters" element="tns:getWeatherByCoords"/>
+  </wsdl:message>
+  <wsdl:message name="getWeatherResponse">
+    <wsdl:part name="parameters" element="tns:getWeatherByCoordsResponse"/>
+  </wsdl:message>
+
+  <wsdl:portType name="WeatherServicePortType">
+    <wsdl:operation name="getWeatherByCoords">
+      <wsdl:input message="tns:getWeatherRequest"/>
+      <wsdl:output message="tns:getWeatherResponse"/>
+    </wsdl:operation>
+  </wsdl:portType>
+
+  <wsdl:binding name="WeatherServiceBinding" type="tns:WeatherServicePortType">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="getWeatherByCoords">
+      <soap:operation soapAction="getWeatherByCoords"/>
+      <wsdl:input>
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+
+  <wsdl:service name="WeatherService">
+    <wsdl:port name="WeatherServicePort" binding="tns:WeatherServiceBinding">
+      <soap:address location="http://localhost:3001/wsdl"/>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

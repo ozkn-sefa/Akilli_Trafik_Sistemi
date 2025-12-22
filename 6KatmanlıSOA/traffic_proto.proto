@@ -1,0 +1,53 @@
+// traffic_proto.proto
+syntax = "proto3";
+
+// Tüm gRPC nesnelerini 'traffic' paketi içine yerleştiriyoruz.
+package traffic; 
+
+// 1. Servis Tanımı: Flask tarafında uygulanacak, Node.js tarafında çağrılacak metod.
+service TrafficService {
+  // predictTraffic metodu, bir RouteRequest alır ve bir RouteResponse döndürür.
+  rpc PredictTraffic (RouteRequest) returns (RouteResponse) {}
+}
+
+// 2. İstemci (Node.js) tarafından gönderilen istek yapısı (REST'ten gelen veriler).
+message RouteRequest {
+  string startLat = 1;
+  string startLng = 2;
+  string endLat = 3;
+  string endLng = 4;
+}
+
+// 3. Sunucu (Flask) tarafından döndürülen karmaşık yanıt yapısı.
+
+// Rota adımı (Step) için tahmin sonuçlarını temsil eder.
+message PredictionStep {
+  double lat = 1;
+  double lng = 2;
+  string name = 3;
+  double distance = 4;
+  double duration = 5;
+  double predicted_avg_speed = 6;
+  double predicted_travel_time = 7;
+}
+
+// Orijinal rota verilerini temsil eder.
+message OriginalRoute {
+  string geometry = 1;
+  repeated PredictionStep steps = 2; // Birden çok adım içerir.
+  double totalPredictedDuration = 3;
+  double totalOSRMDuration = 4;
+}
+
+// Alternatif rota verilerini temsil eder (şimdilik basit bir alan).
+message AlternativeRoute {
+  string suggestion = 1;
+  bool isAlternativeBetter = 2;
+  string alternativeMapData = 3; // Harita verisi JSON veya string olarak düşünülebilir.
+}
+
+// Ana yanıt yapısı (Node.js Gateway'e dönecek nihai JSON).
+message RouteResponse {
+  OriginalRoute originalRoute = 1;
+  AlternativeRoute alternativeRoute = 2;
+}
