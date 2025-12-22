@@ -1,0 +1,91 @@
+﻿@model AkıllıTrafikSistemi.Models.LoginModel
+
+@{
+    ViewData["Title"] = "Giriş Yap";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-5">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-header bg-transparent border-0 pt-4">
+                    <h2 class="text-center fw-bold text-primary">Giriş Yap</h2>
+                    <p class="text-center text-muted small">Hesabınıza erişmek için bilgilerinizi girin</p>
+                </div>
+
+                <div class="card-body px-4 py-3">
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="bi bi-check-circle me-2"></i> @TempData["SuccessMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+
+                    <form asp-action="Login" asp-controller="Auth" method="post" autocomplete="off">
+                        @Html.AntiForgeryToken()
+
+                        <div class="form-group mb-3">
+                            <label asp-for="Email" class="form-label fw-semibold">E-posta Adresi</label>
+                            <input asp-for="Email" class="form-control form-control-lg fs-6" type="email" placeholder="isim@örnek.com" />
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+
+                        <div class="form-group mb-4">
+                            <div class="d-flex justify-content-between">
+                                <label asp-for="Password" class="form-label fw-semibold">Şifre</label>
+                                
+                            </div>
+                            <input asp-for="Password" class="form-control form-control-lg fs-6" type="password" placeholder="••••••••" />
+                            <span asp-validation-for="Password" class="text-danger small"></span>
+                            <a asp-controller="Auth" asp-action="ChangePassword" class="text-decoration-none small text-muted">Şifremi Unuttum</a>
+                        </div>
+
+                        <div class="d-grid mb-3">
+                            <button type="submit" class="btn btn-primary btn-lg fw-bold shadow-sm py-2">
+                                Giriş Yap
+                            </button>
+                        </div>
+                    </form>
+
+                    <hr class="text-muted opacity-25">
+
+                    <div class="text-center">
+                        <p class="small text-muted mb-0">
+                            Hesabınız yok mu? 
+                            <a asp-controller="Auth" asp-action="Register" class="text-decoration-none fw-bold text-primary">Kayıt Olun</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Masaüstü hover ve odaklanma efektleri */
+    .card { transition: transform 0.2s ease; }
+    
+    .form-control:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.1);
+    }
+
+    .btn-primary {
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2) !important;
+    }
+
+    /* Linklerin üzerine gelince renk değişimi */
+    a.text-primary:hover {
+        text-decoration: underline !important;
+    }
+</style>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

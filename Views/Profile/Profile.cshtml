@@ -1,0 +1,139 @@
+﻿@model AkıllıTrafikSistemi.Models.UserProfileViewModel
+@{
+    ViewData["Title"] = "Profil Detayları";
+    Layout = "_ALayout"; 
+}
+
+<style>
+    /* Ana kapsayıcıyı ortalamak ve düzenlemek için */
+    .profile-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .profile-wrapper {
+        display: flex;
+        gap: 20px;
+        /* Panellerin boyunu eşitlemek için stretch kullanıyoruz */
+        align-items: stretch; 
+        justify-content: center;
+        min-height: 450px;
+    }
+
+    /* Sol Panel: Kullanıcı Özeti */
+    .info-panel {
+        flex: 1;
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 12px;
+        padding: 30px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center; /* Dikeyde ortala */
+        align-items: center;    /* Yatayda ortala */
+    }
+
+    /* Sağ Panel: Detaylar */
+    .stats-panel {
+        flex: 2;
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 12px;
+        padding: 30px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center; /* İçindeki tabloyu dikeyde ortalar */
+    }
+
+    .profile-header {
+        border-bottom: 2px solid #f8f9fa;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        text-align: center;
+    }
+
+    /* Tabloyu daha okunaklı ve ortalı yapmak için */
+    .profile-table {
+        margin: 0 auto;
+        width: 100%;
+        max-width: 500px;
+    }
+
+    .profile-table th {
+        color: #6c757d;
+        font-weight: 600;
+        text-align: right;
+        padding-right: 20px;
+    }
+
+    .profile-table td {
+        text-align: left;
+    }
+
+    /* Mobil uyum */
+    @@media (max-width: 992px) {
+        .profile-wrapper {
+            flex-direction: column;
+        }
+        .info-panel, .stats-panel {
+            flex: none;
+            width: 100%;
+        }
+        .profile-table th {
+            text-align: left;
+        }
+    }
+</style>
+
+<div class="profile-container">
+    <h2 class="text-center mt-4 mb-4 fw-bold">Hesap Yönetimi</h2>
+
+    <div class="profile-wrapper">
+        <div class="info-panel shadow-sm">
+            <div class="mb-3">
+                <i class="bi bi-person-circle" style="font-size: 4rem; color: #007bff;"></i>
+            </div>
+            <h3 class="fw-bold mb-1">@Model.Username</h3>
+            <span class="badge bg-primary px-3 py-2 mb-3">Aktif Kullanıcı</span>
+            <div class="text-center w-100">
+                <hr />
+                <p class="text-muted mb-0">Sisteme kayıt tarihiniz:</p>
+                <p class="fw-bold text-dark">@Model.CreatedAt.ToString("dd MMMM yyyy")</p>
+            </div>
+        </div>
+
+        <div class="stats-panel shadow-sm">
+            <div class="profile-header">
+                <h5 class="text-primary mb-0">
+                    <i class="bi bi-shield-lock me-2"></i>Güvenlik ve Kimlik Bilgileri
+                </h5>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-borderless profile-table">
+                    <tbody>
+                        <tr>
+                            <th style="width: 45%">Kullanıcı Adı:</th>
+                            <td>@Model.Username</td>
+                        </tr>
+                        <tr>
+                            <th>E-Posta Adresi:</th>
+                            <td class="fw-bold text-dark">@Model.MaskedEmail</td>
+                        </tr>
+                        <tr>
+                            <th>Bildirim Tercihi:</th>
+                            <td>
+                                @if(Model.WantsEmailNotifications) {
+                                    <span class="text-success fw-bold">● Açık</span>
+                                } else {
+                                    <span class="text-danger fw-bold">○ Kapalı</span>
+                                }
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

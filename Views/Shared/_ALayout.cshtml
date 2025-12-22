@@ -1,0 +1,74 @@
+﻿<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Akıllı Trafik Sistemi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" asp-controller="Home" asp-action="Index">
+                Akıllı Trafik Sistemi
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMenu" aria-controls="navbarMenu" aria-expanded="false" aria-label="Menüyü Aç">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarMenu">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Traffic" asp-action="Density">Yoğunluk Tahmini</a>
+                    </li>
+                    <li class="nav-item">
+    <a class="nav-link" asp-controller="History" asp-action="History">Geçmiş Rotalar</a>
+</li>
+                    <li class="nav-item">
+    <a class="nav-link" asp-controller="Marker" asp-action="Marker">Uyarılar ve İşaretler</a>
+</li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Signs" asp-action="TrafficSigns">Trafik Kuralları</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Profile" asp-action="Profile">Profilim</a>
+                    </li>
+                </ul>
+
+                <div class="navbar-nav ms-auto">
+                    @if (Context.Session.GetString("Username") != null)
+                    {
+                        <span class="navbar-text me-3">
+                            Hoş geldiniz, @Context.Session.GetString("Username")
+                        </span>
+                        <a class="nav-link" asp-controller="Auth" asp-action="Logout">Çıkış</a>
+                    }
+                    else
+                    {
+                        <a class="nav-link" asp-controller="Auth" asp-action="Login">Giriş</a>
+                        <a class="nav-link" asp-controller="Auth" asp-action="Register">Kayıt</a>
+                    }
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <main role="main">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted mt-5">
+        <div class="container">
+            &copy; 2025 - Akıllı Trafik Sistemi
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,289 @@
+﻿@* Views/Marker/Index.cshtml *@
+@model AkıllıTrafikSistemi.Models.UserMarker
+
+@{
+    bool isGuest = Model.Username.Equals("Misafir Kullanıcı");
+    Layout = isGuest ? "_Layout" : "_ALayout"; 
+    ViewData["Title"] = "İstanbul Trafik Haritası ";
+}
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+    /* GENEL STİLLER */
+    body { margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background: #f4f7f6; }
+    h2 { margin: 20px; color: #2c3e50; font-weight: 600; }
+
+    #mainContainer { display: flex; gap: 20px; margin: 0 20px 20px 20px; }
+    
+    /* Harita için varsayılan genişlik ve yükseklik */
+    #map { 
+        flex: 3; 
+        height: 750px; 
+        min-height: 400px; /* Mobilde kaybolmaması için minimum yükseklik */
+        border-radius: 12px; 
+        border: 1px solid #ddd; 
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+        z-index: 1; /* Diğer elementlerin altında kalmaması için */
+    }
+    
+    #sidePanel { flex: 1; max-width: 420px; }
+    #markerPanel { background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    
+    #markerList { max-height: 400px; overflow-y: auto; list-style: none; padding: 0; margin-top: 15px; }
+    #markerList li { padding: 12px; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; background: #fff; }
+    
+    .delete-btn { float: right; color: #e74c3c; cursor: pointer; font-weight: bold; font-size: 0.8rem; border: 1px solid #e74c3c; padding: 2px 8px; border-radius: 4px; }
+
+    #markerStats { 
+        background: #fff; 
+        padding: 15px 25px; 
+        border-radius: 10px; 
+        margin: 20px; 
+        display: flex; 
+        gap: 20px; 
+        flex-wrap: wrap; /* Mobilde taşmaması için */
+        border-left: 5px solid #3498db; 
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+    }
+
+    #markerStats span { font-weight: bold; color: #3498db; }
+
+    /* Marker İkonları */
+    .leaflet-marker-icon.Yogunluk { background-color: #ff3333; border-radius: 50%; border: 2px solid white; color: white; text-align: center; line-height: 30px; font-weight: bold; width: 30px !important; height: 30px !important; margin-left: -15px !important; margin-top: -15px !important; }
+    .leaflet-marker-icon.YolCalismasi { background-color: #ffaa00; border-radius: 50%; border: 2px solid white; color: white; text-align: center; line-height: 30px; font-weight: bold; width: 30px !important; height: 30px !important; margin-left: -15px !important; margin-top: -15px !important; }
+    .leaflet-marker-icon.BozukYol { background-color: #9900cc; border-radius: 50%; border: 2px solid white; color: white; text-align: center; line-height: 30px; font-weight: bold; width: 30px !important; height: 30px !important; margin-left: -15px !important; margin-top: -15px !important; }
+    .leaflet-marker-icon.KayganYol { background-color: #0099ff; border-radius: 50%; border: 2px solid white; color: white; text-align: center; line-height: 30px; font-weight: bold; width: 30px !important; height: 30px !important; margin-left: -15px !important; margin-top: -15px !important; }
+    .leaflet-marker-icon.Kaza { background-color: #d9534f; border-radius: 50%; border: 2px solid white; color: white; text-align: center; line-height: 30px; font-weight: bold; width: 30px !important; height: 30px !important; margin-left: -15px !important; margin-top: -15px !important; }
+    .leaflet-marker-icon.KapaliYol { background-color: #343a40; border-radius: 50%; border: 2px solid white; color: white; text-align: center; line-height: 30px; font-weight: bold; width: 30px !important; height: 30px !important; margin-left: -15px !important; margin-top: -15px !important; }
+    .leaflet-marker-icon.Radar { background-color: #5bc0de; border-radius: 50%; border: 2px solid white; color: white; text-align: center; line-height: 30px; font-weight: bold; width: 30px !important; height: 30px !important; margin-left: -15px !important; margin-top: -15px !important; }
+    .leaflet-marker-icon.temp-marker { background-color: #3498db; border-radius: 50%; border: 3px solid #fff; color: white; text-align: center; line-height: 34px; font-size: 1.2rem; width: 36px !important; height: 36px !important; margin-left: -18px !important; margin-top: -18px !important; }
+
+    #roadInfo { font-weight: 600; color: #27ae60; margin-top: 10px; padding: 8px; background: #f0fff4; border-radius: 5px; }
+    .road-error { color: #c0392b; background: #fff5f5 !important; }
+
+    /* MOBİL DÜZENLEME */
+    @@media (max-width: 991px) {
+        #mainContainer { flex-direction: column; margin: 0 10px 20px 10px; }
+        #map { 
+            height: 400px; /* Mobilde sabit yükseklik */
+            width: 100%; 
+            order: 1; /* Haritayı üste al */
+        }
+        #sidePanel { 
+            width: 100%; 
+            max-width: 100%; 
+            order: 2; /* Formu alta al */
+        }
+        #markerStats { gap: 10px; font-size: 0.9rem; }
+    }
+</style>
+
+<h2>İstanbul Trafik Durumu </h2>
+
+<div id="markerStats">
+    <div>Hoş Geldin, <span>@Model.Username</span>!</div>
+    <div>Toplam: <span id="totalMarkerCountDisplay">@Model.TotalMarkerCount</span></div>
+    @if (!isGuest)
+    {
+        <div>Sizin: <span id="userMarkerCountDisplay">@Model.UserMarkerCount</span></div>
+    }
+</div>
+
+<div id="mainContainer">
+    <div id="map"></div>
+
+    <div id="sidePanel">
+        <div id="markerPanel">
+            @if (isGuest)
+            {
+                <div style="text-align: center; padding: 20px;">
+                    <div style="font-size: 3rem; margin-bottom: 15px;">📍</div>
+                    <h4>Katılmak İster misiniz?</h4>
+                    <p class="text-muted small">Haritaya işaret eklemek için giriş yapın.</p>
+                    <hr>
+                    <a href="/Auth/Login" class="btn btn-primary w-100 mb-2">Giriş Yap</a>
+                    <a href="/Auth/Register" class="btn btn-outline-secondary w-100">Kayıt Ol</a>
+                </div>
+            }
+            else
+            {
+                <h3>İşaret Bırak</h3>
+                <p class="small text-muted">Haritada yol üzerine tıklayın.</p>
+                <div id="roadInfo" class="text-muted small">Lütfen konum seçin...</div>
+                
+                <div id="markerForm" style="display:none; margin-top:15px;">
+                    <div class="mb-3">
+                        <label class="form-label small">Olay Tipi</label>
+                        <select id="markerType" class="form-select form-select-sm">
+                            <option value="Yogunluk">Yoğunluk 🔴</option>
+                            <option value="YolCalismasi">Yol Çalışması 🚧</option>
+                            <option value="BozukYol">Bozuk Yol 💥</option>
+                            <option value="KayganYol">Kaygan Yol ⚠️</option>
+                            <option value="Kaza">Trafik Kazası 🚨</option> 
+                            <option value="KapaliYol">Kapalı Yol ⛔</option>
+                            <option value="Radar">Hız Radarı 📸</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small">Kısa Not</label>
+                        <input type="text" id="markerDesc" class="form-control form-control-sm" placeholder="Örn: Sol şerit kapalı" maxlength="100">
+                    </div>
+                    <button class="btn btn-success btn-sm w-100" onclick="saveNewMarker()" id="saveButton">Konumu Bildir</button>
+                </div>
+                <hr>
+                <h3 class="h5">İşaretleriniz</h3>
+                <ul id="markerList">
+                    <li>Yükleniyor...</li>
+                </ul>
+            }
+        </div>
+    </div>
+</div>
+
+<script>
+    const IS_GUEST = @isGuest.ToString().ToLower();
+    const IST_BOUNDS = L.latLngBounds([40.802, 28.5], [41.45, 29.7]);
+    
+    var map = L.map('map', { 
+        maxBounds: IST_BOUNDS, 
+        maxBoundsViscosity: 1.0 
+    }).setView([41.0151, 28.9795], 11);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap',
+        maxZoom: 19
+    }).addTo(map);
+
+    // MOBİL İÇİN KRİTİK: Harita boyutunu yeniden hesapla
+    setTimeout(function(){ map.invalidateSize()}, 400);
+
+    let tempMarker = null; 
+    let activeMarkers = L.layerGroup().addTo(map);
+
+    function createCustomIcon(markerType) {
+        const icons = {
+            "Yogunluk": "🛑", "YolCalismasi": "🚧", "BozukYol": "💥", 
+            "KayganYol": "💧", "Kaza": "🚨", "KapaliYol": "🚫", "Radar": "📷"
+        };
+        return L.divIcon({ 
+            className: markerType, 
+            html: icons[markerType] || "❓", 
+            iconSize: [30, 30] 
+        });
+    }
+
+    async function getRoadInfo(lat, lng) {
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=18`, {
+                headers: { 'User-Agent': 'IstanbulTrafficApp/1.0' }
+            });
+            const data = await res.json();
+            const road = data.address.road || data.address.street || data.address.highway;
+            return { isOnRoad: !!road, roadName: road || "Yol Tespit Edilemedi" };
+        } catch (e) { return { isOnRoad: false, roadName: 'Bağlantı Hatası' }; }
+    }
+
+    map.on('click', async function (e) {
+        if (IS_GUEST) {
+            L.popup().setLatLng(e.latlng).setContent("İşaret bırakmak için lütfen <b>giriş yapın</b>.").openOn(map);
+            return;
+        }
+
+        const roadInfoEl = document.getElementById('roadInfo');
+        const markerFormEl = document.getElementById('markerForm');
+        
+        if (!IST_BOUNDS.contains(e.latlng)) {
+            roadInfoEl.innerHTML = '<span class="road-error">İstanbul dışı işaretlenemez.</span>';
+            return;
+        }
+
+        roadInfoEl.innerHTML = 'Kontrol ediliyor...';
+        const { isOnRoad, roadName } = await getRoadInfo(e.latlng.lat, e.latlng.lng);
+
+        if (!isOnRoad) {
+            roadInfoEl.innerHTML = `<span class="road-error">Sadece yolları işaretleyebilirsiniz.</span>`;
+            if (tempMarker) map.removeLayer(tempMarker);
+            return;
+        }
+
+        roadInfoEl.innerHTML = `📍 Yol: <strong>${roadName}</strong>`;
+        markerFormEl.style.display = 'block';
+        markerFormEl.dataset.lat = e.latlng.lat;
+        markerFormEl.dataset.lng = e.latlng.lng;
+        document.getElementById('saveButton').dataset.roadname = roadName;
+
+        if (tempMarker) map.removeLayer(tempMarker);
+        tempMarker = L.marker(e.latlng, { 
+            icon: L.divIcon({ className: 'temp-marker', html: '📍', iconSize: [36, 36] }) 
+        }).addTo(map);
+    });
+
+    async function saveNewMarker() {
+        const form = document.getElementById('markerForm');
+        const data = {
+            Lat: parseFloat(form.dataset.lat),
+            Lng: parseFloat(form.dataset.lng),
+            MarkerType: document.getElementById('markerType').value,
+            Description: document.getElementById('markerDesc').value,
+            RoadName: document.getElementById('saveButton').dataset.roadname
+        };
+
+        const res = await fetch("/Marker/SaveMarker", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data)
+        });
+
+        if (res.ok) { location.reload(); } 
+        else { alert("Hata oluştu."); }
+    }
+
+    async function loadAllMarkers() {
+        try {
+            const res = await fetch("/Marker/GetAllMarkers");
+            const data = await res.json();
+            (data.markers || []).forEach(m => {
+                L.marker([m.lat, m.lng], { icon: createCustomIcon(m.markerType) })
+                 .bindPopup(`<b>${m.markerType}</b><br>Yol: ${m.roadName}<br>Ekleyen: ${m.username}`)
+                 .addTo(activeMarkers);
+            });
+        } catch(e) { console.error("Markerlar yüklenemedi."); }
+    }
+
+    async function loadUserMarkers() {
+        if (IS_GUEST) return;
+        try {
+            const res = await fetch("/Marker/GetUserMarkers");
+            const data = await res.json();
+            const listEl = document.getElementById('markerList');
+            listEl.innerHTML = '';
+            if (!data.markers || data.markers.length === 0) {
+                listEl.innerHTML = '<li class="text-muted">Henüz bildirim yapmadınız.</li>';
+                return;
+            }
+            data.markers.forEach(m => {
+                const li = document.createElement('li');
+                li.innerHTML = `<span class="delete-btn" onclick="deleteMarker(${m.id})">Sil</span>
+                                <strong>${m.markerType}</strong><br>
+                                <small class="text-muted">${m.roadName}</small>`;
+                listEl.appendChild(li);
+            });
+        } catch(e) { }
+    }
+
+    async function deleteMarker(id) {
+        if (confirm("Silmek istediğinize emin misiniz?")) {
+            const res = await fetch(`/Marker/DeleteMarker?id=${id}`, { method: "DELETE" });
+            if (res.ok) location.reload();
+        }
+    }
+
+    window.onload = () => {
+        loadAllMarkers();
+        if (!IS_GUEST) loadUserMarkers();
+        // Sayfa yüklendiğinde haritayı bir kez daha tazele
+        setTimeout(() => { map.invalidateSize(); }, 500);
+    };
+</script>

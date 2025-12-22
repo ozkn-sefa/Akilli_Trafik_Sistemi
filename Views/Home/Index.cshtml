@@ -1,0 +1,206 @@
+﻿@model AkıllıTrafikSistemi.Models.WeatherModel
+
+@{
+    ViewData["Title"] = "Ana Sayfa";
+    Layout = "_ALayout";
+}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+    /* 🎨 Hava Durumu Şeridi */
+    .weather-horizontal-bar {
+        background: linear-gradient(90deg, #007bff, #0056b3);
+        color: white;
+        border-radius: 12px;
+        padding: 15px 20px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .weather-content-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 15px;
+    }
+
+    /* 🚀 Yeni Dashboard Kart Stilleri */
+    .feature-card {
+        transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        border: none !important;
+        border-radius: 20px !important;
+        overflow: hidden; /* Resmin taşmaması için */
+        position: relative;
+        height: 220px; /* Sabit yükseklik */
+        display: flex;
+        flex-direction: column;
+        z-index: 1;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.15) !important;
+    }
+
+    /* Kart Arka Plan İllüstrasyonu */
+    .card-bg-icon {
+        position: absolute;
+        right: -10px;
+        bottom: -10px;
+        font-size: 8rem;
+        opacity: 0.07; /* Çok hafif görünmesi için */
+        transform: rotate(-15deg);
+        z-index: -1;
+        pointer-events: none;
+    }
+
+    .icon-box {
+        width: 55px;
+        height: 55px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 15px;
+        margin-bottom: 20px;
+        font-size: 1.2rem;
+    }
+
+    /* Renk Paletleri */
+    .bg-primary-light { background-color: #e7f1ff; color: #007bff; }
+    .bg-danger-light { background-color: #ffeef0; color: #dc3545; }
+    .bg-success-light { background-color: #e9faf0; color: #198754; }
+    .bg-warning-light { background-color: #fff9e6; color: #ffc107; }
+
+    .card-title { font-weight: 700; font-size: 1.15rem; margin-bottom: 10px; }
+    .card-text { font-size: 0.85rem; line-height: 1.5; color: #6c757d; }
+
+    @@media (max-width: 768px) {
+        .weather-horizontal-bar { overflow-x: auto; }
+        .feature-card { height: auto; min-height: 200px; }
+    }
+</style>
+
+<div class="container mt-4">
+    
+    <div class="weather-horizontal-bar" id="weatherBar">
+        <div class="weather-content-wrapper" id="weatherCardBody">
+            @if (Model != null && Model.Weather != null)
+            {
+                <div class="weather-item d-none d-lg-flex">
+                    <span class="weather-label">Güncelleme:</span>
+                    <span class="weather-value">@Model.Weather.Time</span>
+                </div>
+                <div class="weather-item">
+                    <span class="weather-label">Durum:</span>
+                    <span class="weather-value">@Model.Weather.Description</span>
+                </div>
+                <div class="weather-item">
+                    <span class="weather-label">Sıcaklık:</span>
+                    <span class="weather-value">@Model.Weather.Temperature °C</span>
+                </div>
+                <div class="weather-item">
+                    <span class="weather-label">Bölge:</span>
+                    <span class="weather-value">@(Model.Location?.Road ?? "Belirleniyor...")</span>
+                </div>
+                <div class="btn-location-wrapper">
+                    <button class="btn btn-light btn-sm fw-bold shadow-sm" onclick="getLocation(true)">🔄</button>
+                </div>
+            }
+            else
+            {
+                <div class="d-flex align-items-center justify-content-between w-100">
+                    <span>Konum bilgisi bekleniyor...</span>
+                    <button class="btn btn-light btn-sm ms-2" onclick="getLocation(true)">📍 Konum İzni Ver</button>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <div class="col-md-6 col-lg-3">
+            <div class="card feature-card p-4 shadow-sm">
+                <i class="fas fa-map-marked-alt card-bg-icon"></i>
+                <div class="icon-box bg-primary-light">
+                    <i class="fas fa-route"></i>
+                </div>
+                <h5 class="card-title">Rota Analizi</h5>
+                <p class="card-text">Trafik verileriyle en hızlı güzergahı ve varış süresini anlık hesaplayın.</p>
+                <a href="/Traffic/Density" class="btn btn-primary btn-sm rounded-pill w-100 mt-auto shadow-sm">Analiz Başlat</a>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <div class="card feature-card p-4 shadow-sm">
+                <i class="fas fa-bullhorn card-bg-icon"></i>
+                <div class="icon-box bg-danger-light">
+                    <i class="fas fa-map-pin"></i>
+                </div>
+                <h5 class="card-title">Bildirim Yap</h5>
+                <p class="card-text">Yoldaki kaza, radar veya yoğunluğu harita üzerinde diğer sürücülerle paylaşın.</p>
+                <a href="/Marker/Index" class="btn btn-danger btn-sm rounded-pill w-100 mt-auto shadow-sm">Haritaya Ekle</a>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <div class="card feature-card p-4 shadow-sm">
+                <i class="fas fa-history card-bg-icon"></i>
+                <div class="icon-box bg-success-light">
+                    <i class="fas fa-clock-rotate-left"></i>
+                </div>
+                <h5 class="card-title">Rota Geçmişi</h5>
+                <p class="card-text">Daha önce sorguladığınız yolları ve geçmiş hava durumlarını inceleyin.</p>
+                <a href="/History/Index" class="btn btn-success btn-sm rounded-pill w-100 mt-auto shadow-sm">Geçmişe Bak</a>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <div class="card feature-card p-4 shadow-sm">
+                <i class="fas fa-book-open card-bg-icon"></i>
+                <div class="icon-box bg-warning-light">
+                    <i class="fas fa-traffic-light"></i>
+                </div>
+                <h5 class="card-title">Trafik Rehberi</h5>
+                <p class="card-text">Trafik işaretleri, kurallar ve güvenli sürüş hakkında her şeyi öğrenin.</p>
+                <a href="/Signs/TrafficSigns" class="btn btn-warning btn-sm rounded-pill w-100 mt-auto shadow-sm">Eğitime Başla</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm p-4 rounded-4">
+                <h4 class="fw-bold mb-4"><i class="fas fa-stream text-primary me-2"></i>Sizin İçin Son Etkinlikler</h4>
+                <div class="mt-2">
+                    @await Component.InvokeAsync("LatestEvents")
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function getLocation(force = false) {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (!force && urlParams.has('lat') && urlParams.has('lon')) return;
+
+        if (navigator.geolocation) {
+            const body = document.getElementById('weatherCardBody');
+            body.innerHTML = "<div class='text-white w-100 text-center'><span class='spinner-border spinner-border-sm me-2'></span> Konum alınıyor...</div>";
+
+            navigator.geolocation.getCurrentPosition(function (pos) {
+                window.location.href = `/Home/Index?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`;
+            }, function (error) {
+                body.innerHTML = `<div class='d-flex justify-content-between align-items-center w-100'>
+                    <span>⚠️ Konum izni gereklidir.</span>
+                    <button class='btn btn-warning btn-sm ms-2' onclick='getLocation(true)'>Tekrar Dene</button>
+                </div>`;
+            });
+        }
+    }
+
+    window.onload = function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if(!urlParams.has('lat')) getLocation(false);
+    };
+</script>

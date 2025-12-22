@@ -1,0 +1,334 @@
+﻿@model AkıllıTrafikSistemi.Models.WeatherModel
+
+@{
+    ViewData["Title"] = "Yoğunluk Tahmini - İstanbul Haritası";
+    Layout = "_ALayout";
+}
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+/* ------------------------------------- */
+/* 🎨 GENEL VE MASAÜSTÜ STİLLERİ */
+/* ------------------------------------- */
+body { margin: 0; padding: 0; font-family: Arial, sans-serif; background: #f8f9fa; }
+h2 { margin: 20px; color: #343a40; }
+
+#mainContainer { 
+    display: flex; 
+    gap: 20px; 
+    margin: 0 20px 20px 20px; 
+}
+
+#sidePanelDesktop {
+    display: flex;
+    flex-direction: column; 
+    width: 350px; 
+    gap: 20px; 
+    flex-shrink: 0;
+    order: 2; 
+}
+
+#map { 
+    flex: 3; 
+    height: 700px;
+    border-radius: 10px; 
+    border: 1px solid #ccc; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+    order: 1; 
+}
+
+#weatherCard, #roadListContainer { 
+    background: #fff; 
+    padding: 20px; 
+    border-radius: 10px; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+    flex: 1; 
+}
+
+#roadList { 
+    list-style: none; 
+    padding-left: 0; 
+    margin-bottom: 15px;
+    max-height: 250px; 
+    overflow-y: auto; 
+    padding-right: 10px;
+}
+
+#roadList li { padding: 6px 0; border-bottom: 1px solid #eee; font-size: 0.95rem; color: #555; }
+#roadListContainer h3 { margin-top: 0; margin-bottom: 10px; color: #007bff; font-size: 1.1rem; }
+#roadListContainer .d-flex { display: flex; gap: 10px; }
+#trafficButton, #resetRouteBtn { flex: 1; font-size: 1rem; }
+.total-info-box { background: #e9ecef; padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 0.9rem; border-left: 4px solid #28a745; }
+
+/* İlk koddaki özel hava durumu stilleri */
+#weatherCard .card-header { display: flex; justify-content: space-between; align-items: center; font-size: 1rem; }
+#weatherCard .btn-refresh { font-size: 0.85rem; padding: 0.3rem 0.5rem; }
+#weatherCard .card-body p { margin-bottom: 0.6rem; font-size: 1rem; }
+
+/* ------------------------------------- */
+/* 📱 MOBİL UYUMLULUK */
+/* ------------------------------------- */
+@@media (max-width: 991px) {
+    #mainContainer { flex-direction: column; margin: 0 10px 10px 10px; }
+    #sidePanelDesktop { display: none !important; }
+    #map, #weatherCard, #roadListContainer { width: 100%; flex: none; margin-bottom: 10px; }
+    #weatherCard { order: 1; }
+    #map { order: 2; height: 400px; }
+    #roadListContainer { order: 3; }
+    #roadList { max-height: 180px; }
+    #roadListContainer .d-flex { flex-direction: column; gap: 10px; }
+}
+</style>
+
+<h2>İstanbul Rota & Yol Analizi</h2>
+
+<div id="mainContainer">
+    <div id="map"></div>
+
+    <div id="sidePanelDesktop" class="d-none d-lg-flex">
+        <div id="weatherCard">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <span>Hava Durumu</span>
+                    <button class="btn btn-light btn-sm btn-refresh" onclick="refreshWeather()">🔄</button>
+                </div>
+                <div class="card-body" id="weatherBody">
+                    <p>Yükleniyor...</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="roadListContainer">
+            <h3>Yol Listesi</h3>
+            <ul id="roadList"></ul>
+            <div id="totalStatsContainer"></div>
+            <div class="d-flex mt-3">
+                <a id="trafficButton" class="btn btn-success">Tahmin Et & Kaydet</a>
+                <button id="resetRouteBtn" class="btn btn-warning">Yeni Rota</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="weatherCard" class="d-lg-none">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <span>Hava Durumu</span>
+                <button class="btn btn-light btn-sm btn-refresh" onclick="refreshWeather()">🔄</button>
+            </div>
+            <div class="card-body" id="weatherBodyMobile">
+                <p>Yükleniyor...</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="roadListContainer" class="d-lg-none">
+        <h3>Yol Listesi</h3>
+        <ul id="roadListMobile"></ul>
+        <div id="totalStatsContainerMobile"></div>
+        <div class="d-flex mt-3">
+            <a id="trafficButtonMobile" class="btn btn-success">Tahmin Et & Kaydet</a>
+            <button id="resetRouteBtnMobile" class="btn btn-warning">Yeni Rota</button>
+        </div>
+    </div>
+</div>
+
+<script>
+var istBounds = L.latLngBounds([40.802, 28.5], [41.45, 29.7]);
+var map = L.map('map', { maxBounds: istBounds, maxBoundsViscosity: 1.0 }).setView([41.015137, 28.979530], 11);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+
+let startMarker = null, endMarker = null, routeLine = null, totalDistanceGlobal = 0;
+
+map.on('click', function (e) {
+    if (!isInsideIstanbul(e.latlng.lat, e.latlng.lng)) return;
+    if (!startMarker) startMarker = L.marker(e.latlng, { draggable: true }).addTo(map);
+    else if (!endMarker) { endMarker = L.marker(e.latlng, { draggable: true }).addTo(map); drawRoute(); }
+});
+
+function isInsideIstanbul(lat, lng) { return lat >= 40.802 && lat <= 41.45 && lng >= 28.5 && lng <= 29.7; }
+
+function displayRoadList(steps){
+    const ulDesktop = document.getElementById("roadList"); 
+    const ulMobile = document.getElementById("roadListMobile");
+    ulDesktop.innerHTML = ""; ulMobile.innerHTML = "";
+    
+    let uniqueRoads = [...new Set(steps.map(s => s.name))].filter(name => name && name.trim() !== "");
+    uniqueRoads.forEach(road => {
+        let li = document.createElement("li");
+        li.textContent = road;
+        ulDesktop.appendChild(li.cloneNode(true));
+        ulMobile.appendChild(li.cloneNode(true));
+    });
+}
+
+function drawRoute() {
+    let start = startMarker.getLatLng(), end = endMarker.getLatLng();
+    let url = `https://router.project-osrm.org/route/v1/driving/${start.lng},${start.lat};${end.lng},${end.lat}?overview=full&geometries=geojson&steps=true`;
+    fetch(url).then(r => r.json()).then(data => {
+        let coords = data.routes[0].geometry.coordinates;
+        if (routeLine) map.removeLayer(routeLine);
+        routeLine = L.polyline(coords.map(c => [c[1], c[0]]), { weight: 5, color: 'red' }).addTo(map);
+        map.fitBounds(routeLine.getBounds());
+        totalDistanceGlobal = data.routes[0].distance; 
+        displayRoadList(data.routes[0].legs[0].steps);
+    });
+}
+
+function resetRoute() {
+    if (startMarker) { map.removeLayer(startMarker); startMarker = null; }
+    if (endMarker) { map.removeLayer(endMarker); endMarker = null; }
+    if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+    document.getElementById("roadList").innerHTML = "";
+    document.getElementById("roadListMobile").innerHTML = "";
+    document.getElementById("totalStatsContainer").innerHTML = "";
+    document.getElementById("totalStatsContainerMobile").innerHTML = "";
+}
+
+document.getElementById("resetRouteBtn").addEventListener("click", resetRoute);
+document.getElementById("resetRouteBtnMobile").addEventListener("click", resetRoute);
+
+function displayTrafficPrediction(data){
+    const containerDesktop = document.getElementById("totalStatsContainer");
+    const containerMobile = document.getElementById("totalStatsContainerMobile");
+    
+    let totalSeconds = data.originalRoute.totalPredictedDuration * 60;
+    let avgSpeed = (totalDistanceGlobal / totalSeconds) * 3.6;
+
+    const statsHtml = `
+        <div class="total-info-box">
+            <b>Rota Analiz Sonucu:</b><br/>
+            Mesafe: ${(totalDistanceGlobal / 1000).toFixed(2)} km<br/>
+            OSRM Normal Süre: ${data.originalRoute.totalOSRMDuration} dk<br/>
+            Tahmini Varış Süresi: ${data.originalRoute.totalPredictedDuration} dk<br/>
+            <strong style="color: #155724;">Tahmini Ort. Hız: ${avgSpeed.toFixed(1)} km/h</strong>
+        </div>
+    `;
+    
+    containerDesktop.innerHTML = statsHtml;
+    containerMobile.innerHTML = statsHtml;
+}
+
+// -----------------------------------------------------------------------------------
+// ----------------- İLK KODDAN ALINAN GELİŞMİŞ SOAP FONKSİYONLARI -------------------
+// -----------------------------------------------------------------------------------
+
+async function fetchWeatherFromSOAP(lat, lon) {
+    const soapUrl = 'http://localhost:3001/wsdl';
+    const soapEnvelope = `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:weat="http://example.com/weather">
+    <soapenv:Header/>
+    <soapenv:Body>
+       <weat:getWeatherByCoords>
+            <weat:lat>${lat}</weat:lat>
+            <weat:lon>${lon}</weat:lon>
+       </weat:getWeatherByCoords>
+    </soapenv:Body>
+</soapenv:Envelope>`;
+
+    try {
+        const response = await fetch(soapUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'text/xml; charset=utf-8',
+                'SOAPAction': 'getWeatherByCoords'
+            },
+            body: soapEnvelope
+        });
+
+        if (!response.ok) throw new Error(`HTTP Hata: ${response.status}`);
+
+        const xmlString = await response.text();
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(xmlString, "text/xml");
+
+        const data = {};
+        const elements = ['temperature', 'windspeed', 'winddirection', 'time', 'city', 'country', 'description'];
+        elements.forEach(tag => {
+            data[tag] = xmlDoc.getElementsByTagName(tag)[0]?.textContent || 'N/A';
+        });
+        
+        return {
+            weather: {
+                temperature: parseFloat(data.temperature) || 0,
+                windspeed: parseFloat(data.windspeed) || 0,
+                winddirection: parseFloat(data.winddirection) || 0,
+                time: data.time,
+                description: data.description || 'Bilinmiyor'
+            },
+            location: {
+                city: data.city,
+                country: data.country
+            }
+        };
+    } catch (err) {
+        throw err;
+    }
+}
+
+async function refreshWeather(){
+    document.getElementById("weatherBody").innerHTML = "<p>SOAP üzerinden yükleniyor...</p>";
+    document.getElementById("weatherBodyMobile").innerHTML = "<p>SOAP üzerinden yükleniyor...</p>";
+
+    try{
+        const weatherData = await fetchWeatherFromSOAP('41.015137', '28.97953'); 
+        
+        const content = `
+            <p><strong>Durum:</strong> ${weatherData.weather.description}</p>
+            <hr/>
+            <p><strong>Sıcaklık:</strong> ${weatherData.weather.temperature} °C</p>
+            <p><strong>Rüzgar:</strong> ${weatherData.weather.windspeed} km/h, ${weatherData.weather.winddirection}°</p>
+            <p><strong>Zaman:</strong> ${weatherData.weather.time}</p>
+            <hr/>
+            <p><strong>Bölge:</strong> ${weatherData.location.city}, ${weatherData.location.country}</p>`;
+        
+        document.getElementById("weatherBody").innerHTML = content;
+        document.getElementById("weatherBodyMobile").innerHTML = content;
+        
+    } catch(err) {
+        const errorContent = `<p class='text-danger'>Hava durumu alınamadı. Servisi kontrol edin.</p>`;
+        document.getElementById("weatherBody").innerHTML = errorContent;
+        document.getElementById("weatherBodyMobile").innerHTML = errorContent;
+    }
+}
+
+async function saveTrafficAndWeather(){
+    if(!startMarker || !endMarker) return;
+    try {
+        const trafficRes = await fetch("http://localhost:3001/traffic/predict", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ 
+                startLat: startMarker.getLatLng().lat, startLng: startMarker.getLatLng().lng, 
+                endLat: endMarker.getLatLng().lat, endLng: endMarker.getLatLng().lng 
+            })
+        });
+        const trafficData = await trafficRes.json();
+        displayTrafficPrediction(trafficData);
+        
+        const weatherData = await fetchWeatherFromSOAP('41.015137', '28.97953');
+        
+        await fetch("/Weather/SaveWeather", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ 
+                Weather: weatherData.weather, 
+                Location: weatherData.location, 
+                Route: { 
+                    StartLat: startMarker.getLatLng().lat, 
+                    StartLng: startMarker.getLatLng().lng, 
+                    EndLat: endMarker.getLatLng().lat, 
+                    EndLng: endMarker.getLatLng().lng, 
+                    Steps: trafficData.originalRoute.steps, 
+                    TotalPredictedDuration: trafficData.originalRoute.totalPredictedDuration, 
+                    TotalOSRMDuration: trafficData.originalRoute.totalOSRMDuration 
+                } 
+            })
+        });
+    } catch(e) { console.error(e); }
+}
+
+document.getElementById("trafficButton").addEventListener("click", saveTrafficAndWeather);
+document.getElementById("trafficButtonMobile").addEventListener("click", saveTrafficAndWeather);
+window.onload = refreshWeather;
+</script>

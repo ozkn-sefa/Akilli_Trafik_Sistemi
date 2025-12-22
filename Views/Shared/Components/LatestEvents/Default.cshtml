@@ -1,0 +1,155 @@
+﻿@model List<AkıllıTrafikSistemi.Models.UserMarker>
+
+@* MarkerType'a göre renk sınıfı döndüren yardımcı fonksiyon (Aynı kalır) *@
+@functions {
+    public string GetMarkerColorClass(string markerType)
+    {
+        // Not: Controller'ınızda "Yogunluk", "YolCalismasi" gibi değerler kullanıyorsanız,
+        // bu fonksiyonu o değerlere göre eşleştirmeyi unutmayın.
+        return markerType?.ToLowerInvariant() switch
+        {
+            "kaza" => "text-danger",
+            "yoğunluk" => "text-warning",
+            "yogunluk" => "text-warning", // Controller'daki tipi de ekledik
+            "yol çalışması" => "text-info",
+            "yolcalismasi" => "text-info", // Controller'daki tipi de ekledik
+            "polis kontrolü" => "text-primary",
+            "radar" => "text-primary", // Controller'daki tipi de ekledik
+            "bozukyol" => "text-secondary",
+            "kayganyol" => "text-primary",
+            "kapalıyol" => "text-dark",
+            _ => "text-secondary" // Diğer türler için varsayılan
+        };
+    }
+
+    // Diğer yardımcı fonksiyonlar (Aynı kalır, sadece MarkerType'lara dikkat edin)
+    public string GetMarkerIcon(string markerType)
+    {
+        return markerType?.ToLowerInvariant() switch
+        {
+            "kaza" => "bi bi-exclamation-octagon-fill", // 🚨 Kaza
+            "yoğunluk" => "bi bi-cone-striped",   // 🚧 Yoğun Trafik
+            "yogunluk" => "bi bi-cone-striped",   // 🚧 Yoğun Trafik
+            "yol çalışması" => "bi bi-tools",         // 🛠️ Yol Çalışması
+            "yolcalismasi" => "bi bi-tools",         // 🛠️ Yol Çalışması
+            "polis kontrolü" => "bi bi-shield-fill-check", // 👮‍♂️ Polis Kontrolü
+            "radar" => "bi bi-camera-fill",          // 📸 Radar
+            "bozukyol" => "bi bi-slash-circle",      // 💥 Bozuk Yol
+            "kayganyol" => "bi bi-sign-stop-fill",   // ⚠️ Kaygan Yol
+            "kapalıyol" => "bi bi-truck-flatbed",    // ⛔ Kapalı Yol
+            _ => "bi bi-geo-alt-fill"                // Varsayılan
+        };
+    }
+}
+
+<div class="card shadow border-0 mb-4">
+    
+    @* Card Header - Başlık ve Toplam Sayı *@
+    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-2">
+        <h5 class="mb-0">Canlı Harita Olayları</h5>
+        <span class="badge rounded-pill bg-danger">
+            @if (Model != null)
+            {
+                @:@Model.Count Olay
+            }
+            else
+            {
+                @:0 Olay
+            }
+        </span>
+    </div>
+    
+    @* Card Body - İçerik (Boş veya Karusel) *@
+    <div class="card-body p-0">
+        
+        @if (Model == null || !Model.Any())
+        {
+            <div class="alert alert-light text-center m-3" role="alert">
+                <i class="bi bi-info-circle-fill"></i>
+                <p class="mb-0 mt-2 text-muted">Haritada henüz bir trafik olayı işaretlenmemiş. İlk olayı siz ekleyin!</p>
+            </div>
+        }
+        else
+        {
+            @* Bootstrap Carousel (Kayan Karusel) *@
+            <div id="eventCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
+                
+                <div class="carousel-inner">
+                    @for (int i = 0; i < Model.Count; i++)
+                    {
+                        var marker = Model[i];
+                        var colorClass = GetMarkerColorClass(marker.MarkerType);
+                        var iconClass = GetMarkerIcon(marker.MarkerType);
+                        
+                        <div class="carousel-item @(i == 0 ? "active" : "")">
+                            <div class="p-3">
+                                
+                                @* Olay Tipi Başlığı - Daha Büyük ve Renkli *@
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="@iconClass @colorClass me-2 fs-5"></i>
+                                    <h5 class="mb-0 @colorClass">@marker.MarkerType</h5>
+                                </div>
+                                
+                                <hr class="my-1">
+                                
+                                @* ⭐ YENİ EKLENEN: Yol Adı Bilgisi *@
+                                @if (!string.IsNullOrEmpty(marker.RoadName))
+                                {
+                                    <p class="small text-dark mb-2">
+                                        <i class="bi bi-geo me-1"></i>
+                                        <strong>Konum:</strong> @marker.RoadName
+                                    </p>
+                                }
+
+                                @* Açıklama (Varsa) *@
+                                @if (!string.IsNullOrEmpty(marker.Description))
+                                {
+                                    <p class="small text-dark mb-2">
+                                        <i class="bi bi-chat-left-text me-1"></i>
+                                        <strong>Açıklama:</strong> @marker.Description
+                                    </p>
+                                }
+                                
+                                @* Kullanıcı Bilgisi *@
+                                <p class="small text-muted mb-2">
+                                    <i class="bi bi-person-circle me-1"></i>
+                                    <strong>Bildiren:</strong> @marker.Username
+                                </p>
+                                
+                                @* Zaman Bilgisi *@
+                                <p class="small text-black-50 mb-0">
+                                    <i class="bi bi-clock me-1"></i>
+                                    <strong>Zaman:</strong> @marker.CreatedAt.ToString("dd.MM.yyyy HH:mm")
+                                </p>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                @* Karusel Kontrol Okları *@
+                @if (Model.Count > 1)
+                {
+                    <button class="carousel-control-prev" type="button" data-bs-target="#eventCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Önceki</span>
+                    </button>
+                    
+                    <button class="carousel-control-next" type="button" data-bs-target="#eventCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Sonraki</span>
+                    </button>
+                }
+            </div>
+        }
+    </div>
+    
+    @* Card Footer *@
+    @if (Model != null && Model.Any())
+    {
+        <div class="card-footer text-center bg-light p-2">
+            <small class="text-secondary">
+                <i class="bi bi-map-fill me-1"></i> Detaylı konum için haritayı kontrol edin.
+            </small>
+        </div>
+    }
+</div>
