@@ -84,7 +84,7 @@ app.post('/api/send-marker-notification', async (req, res) => {
 
     // 3. E-posta Seçenekleri
     const mailOptions = {
-        from: '"Harita Bildirim Sistemi" <osefaa5353@gmail.com>',
+        from: '"Harita Bildirim Sistemi"',
         to: emailList, // Virgülle ayrılmış tüm aboneler
         subject: `🚨 Yeni İşaret: ${markerDetails.MarkerType} (${markerDetails.RoadName || 'Yol Bilgisi Yok'})`,
         html: emailHtml
@@ -115,4 +115,5 @@ app.post('/api/send-marker-notification', async (req, res) => {
 app.listen(port, () => {
     console.log(`Node.js E-posta Servisi http://localhost:${port} adresinde çalışıyor...`);
     console.log("SMTP user:", transporter.options.auth.user);
+
 });
