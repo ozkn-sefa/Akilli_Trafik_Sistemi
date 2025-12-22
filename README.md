@@ -1,94 +1,177 @@
-Akıllı Trafik Yönetim ve Şehir Bilgi Sistemi
-Bu proje, İstanbul özelinde gerçek zamanlı trafik tahmini, hava durumu entegrasyonu, topluluk tabanlı olay bildirimi ve interaktif rota planlama sunan çok katmanlı bir akıllı şehir uygulamasıdır. Geleneksel sistemlerden farklı olarak, makine öğrenmesi modellerini kullanarak daha isabetli varış süresi tahminleri sunar.
+# Akıllı Trafik Yönetim ve Şehir Bilgi Sistemi
 
+Bu proje, **İstanbul özelinde** gerçek zamanlı trafik tahmini, hava durumu entegrasyonu, topluluk tabanlı olay bildirimi ve interaktif rota planlama sunan **çok katmanlı bir akıllı şehir uygulamasıdır**.
 
-Projenin Amacı
-Projenin temel amacı, yol adımlarına göre özel olarak eğitilmiş makine öğrenmesi modelleri aracılığıyla trafik yoğunluğunu analiz etmek ve kullanıcılar için en doğru varış sürelerini hesaplamaktır. Ayrıca, kullanıcıların harita üzerinden kaza, yol çalışması gibi olayları bildirmesine olanak tanıyarak topluluk tabanlı bir trafik bilgi ağı oluşturmayı hedefler.
+Geleneksel trafik sistemlerinden farklı olarak, **makine öğrenmesi modelleri** kullanarak daha isabetli hız ve varış süresi tahminleri üretmeyi hedefler.
 
+---
 
-Öne Çıkan Özellikler
+## Projenin Amacı
 
-Makine Öğrenmesi Destekli Tahmin: OSRM verilerini Random Forest algoritması ile işleyerek, haftanın günü ve günün saatine göre optimize edilmiş hız ve varış süresi tahminleri sunar.
+Projenin temel amacı;
 
+* Yol adımlarına (segment bazlı) göre özel olarak eğitilmiş **makine öğrenmesi modelleri** aracılığıyla trafik yoğunluğunu analiz etmek,
+* Kullanıcılar için **en doğru tahmini varış sürelerini** hesaplamak,
+* Harita tabanlı **topluluk katkılı olay bildirimi** sayesinde güncel ve güvenilir bir trafik bilgi ağı oluşturmaktır.
 
-İnteraktif Olay Bildirimi: Kullanıcılar harita üzerinde kaza, yoğunluk, radar, yol çalışması, bozuk yol, kaygan yol ve kapalı yol gibi 7 farklı tipte işaretleyici oluşturabilir.
+---
 
+## Öne Çıkan Özellikler
 
-Anlık Bildirim Sistemi: Yeni bir trafik olayı bildirildiğinde, ilgili bölgeye abone olan kullanıcılara Node.js tabanlı servis üzerinden otomatik e-posta gönderilir.
+### 🚦 Makine Öğrenmesi Destekli Tahmin
 
+* **OSRM** üzerinden alınan yol ve mesafe verileri,
+* **Random Forest Regressor** algoritması ile işlenir,
+* Haftanın günü ve günün saatine göre **optimize edilmiş hız ve ETA (Estimated Time of Arrival)** tahminleri sunulur.
 
-Hava Durumu Entegrasyonu: Koordinat bazlı hava durumu verileri SOAP ve REST protokolleri aracılığıyla çekilerek trafik tahminlerine ve kullanıcı dashboard ekranına dahil edilir.
+### 🗺️ İnteraktif Olay Bildirimi
 
+Kullanıcılar harita üzerinde aşağıdaki **7 farklı trafik olayı** için işaretleyici ekleyebilir:
 
-Rota Geçmişi: Kullanıcılar sorguladıkları son 50 rotayı, tahmini süreleri ve o anki hava koşullarını geçmiş sayfasından görsel olarak inceleyebilir.
+1. Kaza
+2. Trafik Yoğunluğu
+3. Radar
+4. Yol Çalışması
+5. Bozuk Yol
+6. Kaygan Yol
+7. Kapalı Yol
 
+### 🔔 Anlık Bildirim Sistemi
 
-İstanbul Odaklı Validasyon: İşaretleyicilerin sadece İstanbul sınırları içinde eklenmesini sağlayan koordinat doğrulama mekanizmasına sahiptir.
+* Yeni bir trafik olayı bildirildiğinde,
+* İlgili bölgeye **abone olan kullanıcılara**,
+* **Node.js tabanlı servis** aracılığıyla otomatik **e-posta bildirimi** gönderilir.
 
-Teknik Mimari
-Proje, yüksek ölçeklenebilirlik ve servis bağımsızlığı için mikroservis mimarisi üzerine inşa edilmiştir.
+### 🌦️ Hava Durumu Entegrasyonu
 
-Arka Yüz (Backend)
+* Koordinat bazlı hava durumu verileri,
+* **SOAP ve REST** protokolleri üzerinden alınır,
+* Trafik tahminlerine ve kullanıcı **dashboard** ekranına entegre edilir.
 
-ASP.NET Core 8 MVC: Ana uygulama katmanı, kullanıcı yönetimi, oturum kontrolü ve veritabanı orkestrasyonu.
+### 🕓 Rota Geçmişi
 
+* Kullanıcılar sorguladıkları **son 50 rotayı**;
 
-Node.js & Express: API Gateway, E-posta bildirim servisi ve merkezi loglama servisi.
+  * Tahmini süreler,
+  * O anki hava koşulları,
+  * Görsel rota bilgileri ile birlikte inceleyebilir.
 
+### 📍 İstanbul Odaklı Validasyon
 
-Haberleşme: Servisler arası iletişimde REST, gRPC ve SOAP protokolleri kullanılır.
+* Harita işaretleyicileri yalnızca **İstanbul il sınırları** içerisinde eklenebilir,
+* Koordinat bazlı doğrulama mekanizması ile veri tutarlılığı sağlanır.
 
+---
 
-Entity Framework Core: Veritabanı yönetimi ve Repository Pattern uygulaması.
+## Teknik Mimari
 
-Yapay Zeka ve Makine Öğrenmesi
+Proje, **yüksek ölçeklenebilirlik** ve **servis bağımsızlığı** hedeflenerek **mikroservis mimarisi** üzerine inşa edilmiştir.
 
-Python: Scikit-Learn kütüphanesi kullanılarak Random Forest regresyon modeli eğitilmiştir.
+---
 
+## Arka Yüz (Backend)
 
+### ASP.NET Core 8 MVC
 
-Pandas: Veri işleme ve özellik türetme (Hafta durumu, zaman dilimi vb.) işlemleri için kullanılır.
+* Ana uygulama katmanı
+* Kullanıcı yönetimi
+* Oturum kontrolü
+* Veritabanı orkestrasyonu
 
+### Node.js & Express
 
+* API Gateway
+* E-posta bildirim servisi
+* Merkezi loglama servisi
 
-OSRM (Open Source Routing Machine): Temel yol ağı ve mesafe verilerinin alınması için entegre edilmiştir.
+### Servisler Arası Haberleşme
 
-Veritabanı (MySQL)
+* REST
+* gRPC
+* SOAP
 
-Stored Procedures: Karmaşık kayıt işlemlerini (Rota ve Hava durumu kaydı gibi) optimize etmek için kullanılır.
+### Entity Framework Core
 
+* ORM yönetimi
+* **Repository Pattern** uygulanmıştır
 
-Database Views: Profil özetleri ve son olaylar gibi verilerin hızlı çekilmesi için optimize edilmiştir.
+---
 
+## Yapay Zeka ve Makine Öğrenmesi
 
-Functions: Toplam işaret sayısı gibi hesaplamalar veritabanı seviyesinde fonksiyonlar ile yapılır.
+### Python
 
-Ön Yüz (Frontend)
+* **Scikit-Learn** kullanılarak Random Forest regresyon modeli eğitilmiştir
 
-Razor Views & Bootstrap 5: Modern ve duyarlı kullanıcı arayüzü.
+### Pandas
 
+* Veri temizleme
+* Özellik türetme (hafta içi/sonu, saat dilimi vb.)
 
-Leaflet.js: İnteraktif harita yönetimi, işaretleyici ekleme ve rota çizimi.
+### OSRM (Open Source Routing Machine)
 
-Kullanılan Teknolojiler ve Servisler
+* Yol ağı
+* Mesafe ve rota verilerinin alınması
 
-Platform: .NET 8, Node.js, Python 3 
+---
 
+## Veritabanı (MySQL)
 
-Veritabanı: MySQL 
+### Stored Procedures
 
+* Rota ve hava durumu kayıtları gibi karmaşık işlemlerin performanslı yönetimi
 
-AI Modeli: Random Forest Regressor 
+### Database Views
 
+* Profil özetleri
+* Son trafik olayları gibi verilerin hızlı erişimi
 
-Dış API: OpenWeatherMap (Hava Durumu), OSRM (Rota ve Mesafe) 
+### Functions
 
+* Toplam işaret sayısı gibi hesaplamaların veritabanı seviyesinde yapılması
 
-İletişim: gRPC, SOAP, REST 
+---
 
-Güvenlik ve Loglama
+## Ön Yüz (Frontend)
 
-Şifreleme: Kullanıcı şifreleri SHA256 algoritması kullanılarak hashlenmiş şekilde saklanır.
+### Razor Views & Bootstrap 5
 
+* Modern
+* Duyarlı (Responsive) kullanıcı arayüzü
 
-Merkezi Loglama: Tüm servislerden gelen işlem ve hata kayıtları merkezi bir Logging Service tarafından tarih ve servis bazlı olarak dosyalanır.
+### Leaflet.js
+
+* İnteraktif harita yönetimi
+* İşaretleyici ekleme
+* Rota çizimi ve görselleştirme
+
+---
+
+## Kullanılan Teknolojiler ve Servisler
+
+* **Platform:** .NET 8, Node.js, Python 3
+* **Veritabanı:** MySQL
+* **AI Modeli:** Random Forest Regressor
+* **Dış API’ler:**
+
+  * OpenWeatherMap (Hava Durumu)
+  * OSRM (Rota ve Mesafe)
+* **İletişim Protokolleri:** REST, gRPC, SOAP
+
+---
+
+## Güvenlik ve Loglama
+
+### 🔐 Güvenlik
+
+* Kullanıcı şifreleri **SHA-256** algoritması ile hashlenerek saklanır
+
+### 📝 Merkezi Loglama
+
+* Tüm servislerden gelen işlem ve hata kayıtları
+* Merkezi bir **Logging Service** tarafından
+* Tarih ve servis bazlı olarak dosyalanır
+
+---
+
+> Bu proje, İstanbul için ölçeklenebilir, akıllı ve veri odaklı bir trafik yönetim çözümü sunmayı amaçlamaktadır.
