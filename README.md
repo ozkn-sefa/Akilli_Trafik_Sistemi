@@ -175,3 +175,9 @@ Proje, **yüksek ölçeklenebilirlik** ve **servis bağımsızlığı** hedeflen
 ---
 
 > Bu proje, İstanbul için ölçeklenebilir, akıllı ve veri odaklı bir trafik yönetim çözümü sunmayı amaçlamaktadır.
+## Uygulama içi görüntüler
+<img width="1179" height="837" alt="Ekran görüntüsü 2025-12-26 204617" src="https://github.com/user-attachments/assets/86bf87b2-7992-4334-afd1-3ae76d7aec1e" />
+<img width="1168" height="693" alt="Ekran görüntüsü 2025-12-26 204709" src="https://github.com/user-attachments/assets/53e2ac76-9965-43e1-81c7-cd2508ce9616" />
+<img width="1118" height="860" alt="Ekran görüntüsü 2025-12-26 204736" src="https://github.com/user-attachments/assets/b388e8a0-0a26-408b-817c-739ac232e903" />
+<img width="1331" height="852" alt="Ekran görüntüsü 2025-12-21 170008" src="https://github.com/user-attachments/assets/aaa6d765-907a-43e4-bc77-7f120fea56a0" />
+
